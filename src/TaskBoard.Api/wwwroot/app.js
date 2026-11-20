@@ -60,3 +60,50 @@ document.getElementById('add-form').addEventListener('submit', async event => {
 document.getElementById('search').addEventListener('input', load);
 
 load();
+
+// --- Dark mode toggle ---
+(function() {
+  const STORAGE_KEY = 'taskboard-theme';
+  const toggle = document.getElementById('theme-toggle');
+  if (!toggle) return;
+
+  const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function getSavedTheme() {
+    try {
+      const value = localStorage.getItem(STORAGE_KEY);
+      return value === 'dark' || value === 'light' ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    toggle.setAttribute('aria-pressed', String(theme === 'dark'));
+  }
+
+  const saved = getSavedTheme();
+  const initialTheme = saved || (mediaQuery && mediaQuery.matches ? 'dark' : 'light');
+  applyTheme(initialTheme);
+
+  if (mediaQuery && mediaQuery.addEventListener) {
+    mediaQuery.addEventListener('change', function(event) {
+      if (!getSavedTheme()) {
+        applyTheme(event.matches ? 'dark' : 'light');
+      }
+    });
+  }
+
+  toggle.addEventListener('click', function() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Ignore storage errors (e.g. private browsing restrictions)
+    }
+  });
+})();
