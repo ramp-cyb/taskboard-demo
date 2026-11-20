@@ -29,6 +29,18 @@ tasks.MapDelete("/{id:int}", (TaskStore store, int id) =>
     return Results.NoContent();
 });
 
+tasks.MapGet("/export", (TaskStore store) =>
+{
+    var csv = new System.Text.StringBuilder();
+    csv.AppendLine("Id,Title,Priority,Done,Created");
+    foreach (var t in store.List(null))
+    {
+        var escapedTitle = t.Title.Replace("\"", "\"\"");
+        csv.AppendLine($"{t.Id},\"{escapedTitle}\",{t.Priority},{t.IsDone},{t.CreatedAt:yyyy-MM-dd}");
+    }
+    return Results.File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "tasks.csv");
+});
+
 app.Run();
 
 /// <summary>Lets the tests start the app in memory.</summary>

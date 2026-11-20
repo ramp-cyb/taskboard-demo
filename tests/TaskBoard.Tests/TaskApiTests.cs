@@ -57,4 +57,21 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
 
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/api/tasks/{created.Id}")).StatusCode);
     }
+
+    [Fact]
+    public async Task ExportTasks_ReturnsCsvWithHeadersAndEscapedTitles()
+    {
+        await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task with, comma", Priority.High));
+        await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task with \"quotes\" inside", Priority.Medium));
+
+        var response = await _client.GetAsync("/api/tasks/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        var csv = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("Id,Title,Priority,Done,Created", csv);
+        Assert.Contains("\"Task with, comma\"", csv);
+        Assert.Contains("\"Task with \"\"quotes\"\" inside\"", csv);
+    }
 }
