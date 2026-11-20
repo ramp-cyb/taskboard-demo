@@ -57,4 +57,40 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
 
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/api/tasks/{created.Id}")).StatusCode);
     }
+
+    [Theory]
+    [InlineData("prepare")]
+    [InlineData("PREPARE")]
+    [InlineData("Prepare")]
+    public async Task TaskSearching_CaseInsensitive(string query)
+    {
+        var response = await _client.GetAsync($"/api/tasks?search={query}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var tasks = await response.Content.ReadFromJsonAsync<List<TaskItem>>();
+
+        Assert.NotNull(tasks);
+        Assert.Single(tasks);
+        Assert.Contains(tasks, t => t.Title == "Prepare the client demo");
+    }
+
+    [Fact]
+    public async Task TaskSearching_NoMatch_ReturnsEmpty()
+    {
+        var tasks = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks?search=no-matching-task");
+
+        Assert.NotNull(tasks);
+        Assert.Empty(tasks);
+    }
+
+    [Fact]
+    public async Task TaskSearching_EmptySearch_ReturnsAllSeededTasks()
+    {
+        var tasks = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks?search=");
+
+        Assert.NotNull(tasks);
+        Assert.Contains(tasks, t => t.Title == "Prepare the client demo");
+        Assert.Contains(tasks, t => t.Title == "Review open pull requests");
+        Assert.Contains(tasks, t => t.Title == "Update the README");
+    }
 }

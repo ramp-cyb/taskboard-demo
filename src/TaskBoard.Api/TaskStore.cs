@@ -30,7 +30,7 @@ public sealed class TaskStore
             IEnumerable<TaskItem> result = _tasks;
             if (!string.IsNullOrWhiteSpace(search))
             {
-                result = result.Where(t => t.Title.Contains(search));
+                result = result.Where(t => t.Title.Contains(search, StringComparison.OrdinalIgnoreCase));
             }
             return result.OrderBy(t => t.Id).ToList();
         }
