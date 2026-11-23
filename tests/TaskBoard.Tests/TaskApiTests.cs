@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -61,17 +62,19 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     [Fact]
     public async Task ExportTasks_ReturnsCsvWithHeadersAndEscapedTitles()
     {
-        await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task with, comma", Priority.High));
-        await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task with \"quotes\" inside", Priority.Medium));
+        var commaTask = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task with, comma", Priority.High))).Content.ReadFromJsonAsync<TaskItem>();
+        var quoteTask = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task with \"quotes\" inside", Priority.Medium))).Content.ReadFromJsonAsync<TaskItem>();
 
         var response = await _client.GetAsync("/api/tasks/export");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("tasks.csv", response.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
         var csv = await response.Content.ReadAsStringAsync();
+        var lines = csv.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
 
-        Assert.Contains("Id,Title,Priority,Done,Created", csv);
-        Assert.Contains("\"Task with, comma\"", csv);
-        Assert.Contains("\"Task with \"\"quotes\"\" inside\"", csv);
+        Assert.Equal("Id,Title,Priority,Done,Created", lines[0]);
+        Assert.Contains($"{commaTask!.Id},\"Task with, comma\",High,False,{commaTask.CreatedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}", lines);
+        Assert.Contains($"{quoteTask!.Id},\"Task with \"\"quotes\"\" inside\",Medium,False,{quoteTask.CreatedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}", lines);
     }
 }
