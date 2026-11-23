@@ -26,6 +26,7 @@ dotnet test
 | POST | `/api/tasks` | Adds a task: `{ "title": "...", "priority": "Low" \| "Medium" \| "High" }` |
 | POST | `/api/tasks/{id}/toggle` | Marks a task done or not done |
 | DELETE | `/api/tasks/{id}` | Deletes a task |
+| GET | `/health` | Health check: returns `{ "status": "ok" }` |
 
 Tasks are kept in memory and are lost when the app stops.
 

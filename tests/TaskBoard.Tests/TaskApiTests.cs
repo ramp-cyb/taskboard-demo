@@ -93,4 +93,16 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Contains(tasks, t => t.Title == "Review open pull requests");
         Assert.Contains(tasks, t => t.Title == "Update the README");
     }
+
+    [Fact]
+    public async Task HealthCheck_ReturnsOkStatus()
+    {
+        var response = await _client.GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.NotNull(body);
+        Assert.Single(body);
+        Assert.Equal("ok", body["status"]);
+    }
 }

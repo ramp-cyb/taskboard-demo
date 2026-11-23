@@ -7,6 +7,8 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
 var tasks = app.MapGroup("/api/tasks");
 
 tasks.MapGet("/", (TaskStore store, string? search) => Results.Ok(store.List(search)));
