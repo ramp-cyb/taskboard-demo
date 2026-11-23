@@ -23,8 +23,15 @@
       <button type="submit">Add</button>
     </form>
 
-    <input id="search" type="search" placeholder="Search tasks">
-    <a id="export-link" href="/api/tasks/export" download="tasks.csv">Export</a>
+    <div class="controls">
+      <input id="search" type="search" placeholder="Search tasks">
+      <label for="sort">Sort</label>
+      <select id="sort">
+        <option value="newest" selected>Newest first</option>
+        <option value="priority">Priority</option>
+      </select>
+      <a id="export-link" href="/api/tasks/export" download="tasks.csv">Export</a>
+    </div>
 
     <ul id="tasks"></ul>
   </main>

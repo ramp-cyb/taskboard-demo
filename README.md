@@ -21,7 +21,7 @@ dotnet test
 
 | Method | Path | What it does |
 |---|---|---|
-| GET | `/api/tasks?search=` | Lists tasks, optionally filtered by title |
+| GET | `/api/tasks?search=&sort=` | Lists tasks, optionally filtered by title and sorted (`priority` or newest first by default) |
 | GET | `/api/tasks/{id}` | One task |
 | POST | `/api/tasks` | Adds a task: `{ "title": "...", "priority": "Low" \| "Medium" \| "High" }` |
 | POST | `/api/tasks/{id}/toggle` | Marks a task done or not done |

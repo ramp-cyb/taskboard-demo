@@ -3,7 +3,12 @@ const remaining = document.getElementById('remaining');
 
 async function load() {
   const search = document.getElementById('search').value;
-  const response = await fetch('/api/tasks?search=' + encodeURIComponent(search));
+  const sort = document.getElementById('sort').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (sort === 'priority') params.set('sort', 'priority');
+  const query = params.toString();
+  const response = await fetch('/api/tasks' + (query ? '?' + query : ''));
   const tasks = await response.json();
   render(tasks);
   remaining.textContent = tasks.filter(t => !t.isDone).length + ' remaining';
@@ -58,5 +63,6 @@ document.getElementById('add-form').addEventListener('submit', async event => {
 });
 
 document.getElementById('search').addEventListener('input', load);
+document.getElementById('sort').addEventListener('change', load);
 
 load();

@@ -134,4 +134,71 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
             await _client.DeleteAsync($"/api/tasks/{created.Id}");
         }
     }
+
+    [Theory]
+    [InlineData("priority")]
+    [InlineData("Priority")]
+    public async Task SortingByPriority_ReturnsHighBeforeMediumBeforeLow(string sortParam)
+    {
+        var prefix = $"sort-priority-{Guid.NewGuid():N}";
+        var high = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask($"{prefix}-high", Priority.High))).Content.ReadFromJsonAsync<TaskItem>();
+        var low = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask($"{prefix}-low", Priority.Low))).Content.ReadFromJsonAsync<TaskItem>();
+        var medium = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask($"{prefix}-medium", Priority.Medium))).Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(high);
+        Assert.NotNull(low);
+        Assert.NotNull(medium);
+
+        try
+        {
+            var allTasks = await _client.GetFromJsonAsync<List<TaskItem>>($"/api/tasks?sort={sortParam}");
+            Assert.NotNull(allTasks);
+
+            for (var i = 1; i < allTasks.Count; i++)
+            {
+                Assert.True(allTasks[i - 1].Priority >= allTasks[i].Priority,
+                    $"Expected non-increasing priority order, but {allTasks[i - 1].Priority} preceded {allTasks[i].Priority}.");
+            }
+
+            var createdInAll = allTasks
+                .Where(t => t.Title.StartsWith(prefix, StringComparison.Ordinal))
+                .Select(t => t.Priority)
+                .ToList();
+            Assert.Equal([Priority.High, Priority.Medium, Priority.Low], createdInAll);
+
+            var filteredTasks = await _client.GetFromJsonAsync<List<TaskItem>>($"/api/tasks?search={prefix}&sort={sortParam}");
+            Assert.NotNull(filteredTasks);
+            Assert.Equal([high.Id, medium.Id, low.Id], filteredTasks.Select(t => t.Id).ToList());
+        }
+        finally
+        {
+            await _client.DeleteAsync($"/api/tasks/{high.Id}");
+            await _client.DeleteAsync($"/api/tasks/{low.Id}");
+            await _client.DeleteAsync($"/api/tasks/{medium.Id}");
+        }
+    }
+
+    [Fact]
+    public async Task DefaultListing_ReturnsNewestFirst()
+    {
+        var prefix = $"sort-newest-{Guid.NewGuid():N}";
+        var first = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask($"{prefix}-first", Priority.High))).Content.ReadFromJsonAsync<TaskItem>();
+        var second = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask($"{prefix}-second", Priority.Low))).Content.ReadFromJsonAsync<TaskItem>();
+        var third = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask($"{prefix}-third", Priority.Medium))).Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotNull(third);
+
+        try
+        {
+            var tasks = await _client.GetFromJsonAsync<List<TaskItem>>($"/api/tasks?search={prefix}");
+            Assert.NotNull(tasks);
+            Assert.Equal([third.Id, second.Id, first.Id], tasks.Select(t => t.Id).ToList());
+        }
+        finally
+        {
+            await _client.DeleteAsync($"/api/tasks/{first.Id}");
+            await _client.DeleteAsync($"/api/tasks/{second.Id}");
+            await _client.DeleteAsync($"/api/tasks/{third.Id}");
+        }
+    }
 }
