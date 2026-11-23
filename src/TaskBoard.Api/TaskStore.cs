@@ -25,7 +25,7 @@ public sealed class TaskStore
         Add(new NewTask("Update the README", Priority.Low));
     }
 
-    public IReadOnlyList<TaskItem> List(string? search)
+    public IReadOnlyList<TaskItem> List(string? search, string? sort = null)
     {
         lock (_lock)
         {
@@ -34,7 +34,16 @@ public sealed class TaskStore
             {
                 result = result.Where(t => t.Title.Contains(search, StringComparison.OrdinalIgnoreCase));
             }
-            return result.OrderBy(t => t.Id).ToList();
+
+            if (string.Equals(sort?.Trim(), "priority", StringComparison.OrdinalIgnoreCase))
+            {
+                return result
+                    .OrderByDescending(t => t.Priority)
+                    .ThenByDescending(t => t.Id)
+                    .ToList();
+            }
+
+            return result.OrderByDescending(t => t.Id).ToList();
         }
     }
 

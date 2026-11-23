@@ -21,8 +21,9 @@ header {
   color: #656d76;
 }
 
-form, #search {
+form, .controls {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -36,7 +37,7 @@ input, select, button {
 
 #title, #search {
   flex: 1;
-  width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 

@@ -10,7 +10,7 @@ app.UseStaticFiles();
 
 var tasks = app.MapGroup("/api/tasks");
 
-tasks.MapGet("/", (TaskStore store, string? search) => Results.Ok(store.List(search)));
+tasks.MapGet("/", (TaskStore store, string? search, string? sort) => Results.Ok(store.List(search, sort)));
 
 tasks.MapGet("/{id:int}", (TaskStore store, int id) =>
     store.Get(id) is { } task ? Results.Ok(task) : Results.NotFound());
