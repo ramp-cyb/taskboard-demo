@@ -29,6 +29,8 @@ tasks.MapDelete("/{id:int}", (TaskStore store, int id) =>
     return Results.NoContent();
 });
 
+app.MapGet("/api/stats", (TaskStore store) => Results.Ok(store.GetStats()));
+
 app.Run();
 
 /// <summary>Lets the tests start the app in memory.</summary>

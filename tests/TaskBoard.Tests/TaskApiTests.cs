@@ -93,4 +93,47 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Contains(tasks, t => t.Title == "Review open pull requests");
         Assert.Contains(tasks, t => t.Title == "Update the README");
     }
+
+    [Fact]
+    public async Task TaskStats_ReturnsCorrectCounts()
+    {
+        using var localFactory = new WebApplicationFactory<Program>();
+        using var client = localFactory.CreateClient();
+
+        var stats = await client.GetFromJsonAsync<TaskStats>("/api/stats");
+
+        Assert.NotNull(stats);
+        Assert.Equal(3, stats.Total);
+        Assert.Equal(0, stats.Done);
+        Assert.Equal(3, stats.Remaining);
+        Assert.Equal(1, stats.Low);
+        Assert.Equal(1, stats.Medium);
+        Assert.Equal(1, stats.High);
+    }
+
+    [Fact]
+    public async Task TaskStats_AfterMutations()
+    {
+        using var localFactory = new WebApplicationFactory<Program>();
+        using var client = localFactory.CreateClient();
+
+        // Add a new Low-priority task
+        var added = await (await client.PostAsJsonAsync("/api/tasks", new NewTask("New task", Priority.Low))).Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(added);
+
+        // Toggle the newly added task to done
+        var toggled = await (await client.PostAsync($"/api/tasks/{added.Id}/toggle", null)).Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(toggled);
+        Assert.True(toggled.IsDone);
+
+        var stats = await client.GetFromJsonAsync<TaskStats>("/api/stats");
+
+        Assert.NotNull(stats);
+        Assert.Equal(4, stats.Total);
+        Assert.Equal(1, stats.Done);
+        Assert.Equal(3, stats.Remaining);
+        Assert.Equal(2, stats.Low);
+        Assert.Equal(1, stats.Medium);
+        Assert.Equal(1, stats.High);
+    }
 }

@@ -7,6 +7,17 @@ public enum Priority { Low, Medium, High }
 
 public sealed record TaskItem(int Id, string Title, Priority Priority, bool IsDone, DateTime CreatedAt);
 
+/// <summary>Statistics about tasks in the store.</summary>
+public sealed record TaskStats
+{
+    public int Total { get; init; }
+    public int Done { get; init; }
+    public int Remaining { get; init; }
+    public int Low { get; init; }
+    public int Medium { get; init; }
+    public int High { get; init; }
+}
+
 public sealed record NewTask(string Title, Priority Priority = Priority.Medium);
 
 /// <summary>Keeps tasks in memory; they are lost when the app stops.</summary>
@@ -70,6 +81,24 @@ public sealed class TaskStore
         lock (_lock)
         {
             return _tasks.RemoveAll(t => t.Id == id) > 0;
+        }
+    }
+
+    public TaskStats GetStats()
+    {
+        lock (_lock)
+        {
+            int total = _tasks.Count;
+            int done = _tasks.Count(t => t.IsDone);
+            return new TaskStats
+            {
+                Total = total,
+                Done = done,
+                Remaining = total - done,
+                Low = _tasks.Count(t => t.Priority == Priority.Low),
+                Medium = _tasks.Count(t => t.Priority == Priority.Medium),
+                High = _tasks.Count(t => t.Priority == Priority.High),
+            };
         }
     }
 }
