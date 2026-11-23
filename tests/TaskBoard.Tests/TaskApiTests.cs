@@ -93,4 +93,45 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Contains(tasks, t => t.Title == "Review open pull requests");
         Assert.Contains(tasks, t => t.Title == "Update the README");
     }
+
+    [Fact]
+    public async Task ExportTask_ReturnsCSVWithHeader()
+    {
+        var response = await _client.GetAsync("/api/tasks/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("tasks.csv", response.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+
+        var body = await response.Content.ReadAsStringAsync();
+        var firstLine = body.Split(["\r\n", "\n"], StringSplitOptions.None)[0];
+
+        Assert.Equal("Id,Title,Priority,Done,Created", firstLine);
+        Assert.Contains("Prepare the client demo", body);
+    }
+
+    [Theory]
+    [InlineData("Hello, World", "\"Hello, World\"")]
+    [InlineData("Say \"Hello\"", "\"Say \"\"Hello\"\"\"")]
+    [InlineData("Line1\nLine2", "\"Line1\nLine2\"")]
+    public async Task ExportTask_EscapesSpecialCharacters(string title, string expectedCsvField)
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/tasks", new NewTask(title, Priority.Medium));
+        var created = await createResponse.Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(created);
+
+        try
+        {
+            var response = await _client.GetAsync("/api/tasks/export");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.Contains($"{created.Id},{expectedCsvField},Medium,False,", body);
+        }
+        finally
+        {
+            await _client.DeleteAsync($"/api/tasks/{created.Id}");
+        }
+    }
 }

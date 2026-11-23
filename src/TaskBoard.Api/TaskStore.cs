@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace TaskBoard.Api;
@@ -71,5 +73,42 @@ public sealed class TaskStore
         {
             return _tasks.RemoveAll(t => t.Id == id) > 0;
         }
+    }
+
+    public string Export()
+    {
+        lock (_lock)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Id,Title,Priority,Done,Created");
+            foreach (var t in _tasks.OrderBy(t => t.Id))
+            {
+                sb.Append(t.Id);
+                sb.Append(',');
+                sb.Append(Encode(t.Title));
+                sb.Append(',');
+                sb.Append(t.Priority);
+                sb.Append(',');
+                sb.Append(t.IsDone);
+                sb.Append(',');
+                sb.AppendLine(t.CreatedAt.ToString("o", CultureInfo.InvariantCulture));
+            }
+            return sb.ToString();
+        }
+    }
+
+    private static string Encode(string field)
+    {
+        if (string.IsNullOrEmpty(field))
+        {
+            return string.Empty;
+        }
+
+        if (field.Contains(',') || field.Contains('"') || field.Contains('\r') || field.Contains('\n'))
+        {
+            return "\"" + field.Replace("\"", "\"\"") + "\"";
+        }
+
+        return field;
     }
 }
