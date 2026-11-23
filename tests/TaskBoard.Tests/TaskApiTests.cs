@@ -93,4 +93,25 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Contains(tasks, t => t.Title == "Review open pull requests");
         Assert.Contains(tasks, t => t.Title == "Update the README");
     }
+
+    [Fact]
+    public async Task ExportTasks_ReturnsCsvWithEscapedTitles()
+    {
+        var commaResponse = await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task, with, commas", Priority.High));
+        var commaTask = await commaResponse.Content.ReadFromJsonAsync<TaskItem>();
+        var quoteResponse = await _client.PostAsJsonAsync("/api/tasks", new NewTask("Task \"with\" quotes", Priority.Medium));
+        var quoteTask = await quoteResponse.Content.ReadFromJsonAsync<TaskItem>();
+
+        var response = await _client.GetAsync("/api/tasks/export");
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsStringAsync();
+        var lines = content.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal("text/csv", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("tasks.csv", response.Content.Headers.ContentDisposition?.FileName);
+        Assert.Equal("Id,Title,Priority,Done,Created", lines[0]);
+        Assert.Contains(lines, l => l == $"{commaTask!.Id},\"Task, with, commas\",High,False,{commaTask.CreatedAt:O}");
+        Assert.Contains(lines, l => l == $"{quoteTask!.Id},\"Task \"\"with\"\" quotes\",Medium,False,{quoteTask.CreatedAt:O}");
+    }
 }

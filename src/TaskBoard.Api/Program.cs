@@ -1,3 +1,4 @@
+using System.Text;
 using TaskBoard.Api;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,18 @@ tasks.MapDelete("/{id:int}", (TaskStore store, int id) =>
 {
     store.Delete(id);
     return Results.NoContent();
+});
+
+tasks.MapGet("/export", (TaskStore store) =>
+{
+    using var writer = new StringWriter();
+    writer.WriteLine("Id,Title,Priority,Done,Created");
+    foreach (var task in store.List(null))
+    {
+        var title = $"\"{task.Title.Replace("\"", "\"\"")}\"";
+        writer.WriteLine($"{task.Id},{title},{task.Priority},{task.IsDone},{task.CreatedAt:O}");
+    }
+    return Results.File(Encoding.UTF8.GetBytes(writer.ToString()), "text/csv; charset=utf-8", "tasks.csv");
 });
 
 app.Run();

@@ -10,7 +10,10 @@
   <main>
     <header>
       <h1>TaskBoard</h1>
-      <span id="remaining"></span>
+      <div class="header-meta">
+        <span id="remaining"></span>
+        <a id="export" href="/api/tasks/export" download="tasks.csv">Export</a>
+      </div>
     </header>
 
     <form id="add-form">

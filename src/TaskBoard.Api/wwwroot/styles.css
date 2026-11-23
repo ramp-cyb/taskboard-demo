@@ -17,8 +17,24 @@ header {
   justify-content: space-between;
 }
 
+.header-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
 #remaining {
   color: #656d76;
+}
+
+#export {
+  color: #1f6feb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+#export:hover {
+  text-decoration: underline;
 }
 
 form, #search {
