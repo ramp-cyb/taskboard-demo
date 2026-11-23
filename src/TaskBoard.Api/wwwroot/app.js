@@ -48,13 +48,18 @@ function render(tasks) {
 document.getElementById('add-form').addEventListener('submit', async event => {
   event.preventDefault();
   const title = document.getElementById('title');
-  await fetch('/api/tasks', {
+  const response = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title: title.value, priority: document.getElementById('priority').value })
   });
-  title.value = '';
-  load();
+  if (response.ok) {
+    title.value = '';
+    load();
+  } else {
+    const error = await response.json();
+    alert(error);
+  }
 });
 
 document.getElementById('search').addEventListener('input', load);

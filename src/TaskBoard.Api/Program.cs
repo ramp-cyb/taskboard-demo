@@ -16,6 +16,10 @@ tasks.MapGet("/{id:int}", (TaskStore store, int id) =>
 
 tasks.MapPost("/", (TaskStore store, NewTask request) =>
 {
+    if (string.IsNullOrWhiteSpace(request.Title))
+    {
+        return Results.BadRequest("Title must not be empty.");
+    }
     var task = store.Add(request);
     return Results.Created($"/api/tasks/{task.Id}", task);
 });

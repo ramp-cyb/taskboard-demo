@@ -93,4 +93,32 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Contains(tasks, t => t.Title == "Review open pull requests");
         Assert.Contains(tasks, t => t.Title == "Update the README");
     }
+
+    [Fact]
+    public async Task AddingATaskWithEmptyTitle_ReturnsBadRequest()
+    {
+        var before = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks");
+
+        var response = await _client.PostAsJsonAsync("/api/tasks", new NewTask(""));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var message = await response.Content.ReadFromJsonAsync<string>();
+        Assert.False(string.IsNullOrWhiteSpace(message));
+        var after = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks");
+        Assert.Equal(before!.Count, after!.Count);
+    }
+
+    [Fact]
+    public async Task AddingATaskWithWhitespaceTitle_ReturnsBadRequest()
+    {
+        var before = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks");
+
+        var response = await _client.PostAsJsonAsync("/api/tasks", new NewTask("   "));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var message = await response.Content.ReadFromJsonAsync<string>();
+        Assert.False(string.IsNullOrWhiteSpace(message));
+        var after = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks");
+        Assert.Equal(before!.Count, after!.Count);
+    }
 }
