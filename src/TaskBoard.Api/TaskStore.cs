@@ -5,9 +5,9 @@ namespace TaskBoard.Api;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Priority { Low, Medium, High }
 
-public sealed record TaskItem(int Id, string Title, Priority Priority, bool IsDone, DateTime CreatedAt);
+public sealed record TaskItem(int Id, string Title, Priority Priority, bool IsDone, DateTime CreatedAt, DateOnly? DueDate = null);
 
-public sealed record NewTask(string Title, Priority Priority = Priority.Medium);
+public sealed record NewTask(string Title, Priority Priority = Priority.Medium, DateOnly? DueDate = null);
 
 /// <summary>Keeps tasks in memory; they are lost when the app stops.</summary>
 public sealed class TaskStore
@@ -48,7 +48,7 @@ public sealed class TaskStore
     {
         lock (_lock)
         {
-            var task = new TaskItem(_nextId++, request.Title.Trim(), request.Priority, false, DateTime.UtcNow);
+            var task = new TaskItem(_nextId++, request.Title.Trim(), request.Priority, false, DateTime.UtcNow, request.DueDate);
             _tasks.Add(task);
             return task;
         }

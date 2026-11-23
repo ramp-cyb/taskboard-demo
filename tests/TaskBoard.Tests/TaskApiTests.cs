@@ -93,4 +93,60 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Contains(tasks, t => t.Title == "Review open pull requests");
         Assert.Contains(tasks, t => t.Title == "Update the README");
     }
+
+    [Fact]
+    public async Task AddingATask_WithDueDate_PersistsAndReturnsIt()
+    {
+        var dueDate = new DateOnly(2026, 12, 15);
+        var response = await _client.PostAsJsonAsync("/api/tasks", new NewTask("Submit report", Priority.High, dueDate));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(created);
+        Assert.Equal(dueDate, created!.DueDate);
+
+        var fetched = await _client.GetFromJsonAsync<TaskItem>($"/api/tasks/{created.Id}");
+        Assert.NotNull(fetched);
+        Assert.Equal(dueDate, fetched!.DueDate);
+    }
+
+    [Fact]
+    public async Task AddingATask_WithoutDueDate_SetsDueDateToNull()
+    {
+        var response = await _client.PostAsJsonAsync("/api/tasks", new NewTask("No deadline task", Priority.Low));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(created);
+        Assert.Null(created!.DueDate);
+    }
+
+    [Fact]
+    public async Task TogglingATask_WithDueDate_PreservesDueDate()
+    {
+        var dueDate = new DateOnly(2026, 11, 1);
+        var created = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Overdue toggle", Priority.Medium, dueDate))).Content.ReadFromJsonAsync<TaskItem>();
+
+        var toggled = await (await _client.PostAsync($"/api/tasks/{created!.Id}/toggle", null)).Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.NotNull(toggled);
+        Assert.True(toggled!.IsDone);
+        Assert.Equal(dueDate, toggled.DueDate);
+    }
+
+    [Fact]
+    public async Task AddingATask_WithJsonIsoDateString_DeserializesDueDate()
+    {
+        using var content = new StringContent("""{"title":"From page","priority":"Medium","dueDate":"2026-12-31"}""", System.Text.Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/tasks", content);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<TaskItem>();
+        Assert.NotNull(created);
+        Assert.Equal(new DateOnly(2026, 12, 31), created!.DueDate);
+
+        var html = await _client.GetStringAsync("/");
+        Assert.Contains("id=\"due-date\"", html);
+        Assert.Contains("type=\"date\"", html);
+    }
 }
