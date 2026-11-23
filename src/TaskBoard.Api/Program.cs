@@ -1,3 +1,4 @@
+using System.Text;
 using TaskBoard.Api;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,9 @@ tasks.MapDelete("/{id:int}", (TaskStore store, int id) =>
     store.Delete(id);
     return Results.NoContent();
 });
+
+tasks.MapGet("/export", (TaskStore store) =>
+    Results.File(Encoding.UTF8.GetBytes(store.Export()), "text/csv; charset=utf-8", "tasks.csv"));
 
 app.Run();
 
