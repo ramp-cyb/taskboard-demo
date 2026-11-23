@@ -1,12 +1,16 @@
 const list = document.getElementById('tasks');
 const remaining = document.getElementById('remaining');
 
+function updateRemaining(tasks) {
+  remaining.textContent = tasks.filter(t => !t.isDone).length + ' remaining';
+}
+
 async function load() {
   const search = document.getElementById('search').value;
   const response = await fetch('/api/tasks?search=' + encodeURIComponent(search));
   const tasks = await response.json();
   render(tasks);
-  remaining.textContent = tasks.filter(t => !t.isDone).length + ' remaining';
+  updateRemaining(tasks);
 }
 
 function render(tasks) {
@@ -19,8 +23,17 @@ function render(tasks) {
     box.type = 'checkbox';
     box.checked = task.isDone;
     box.addEventListener('change', async () => {
-      await fetch(`/api/tasks/${task.id}/toggle`, { method: 'POST' });
-      item.classList.toggle('done');
+      const response = await fetch(`/api/tasks/${task.id}/toggle`, { method: 'POST' });
+      if (!response.ok) {
+        box.checked = task.isDone;
+        return;
+      }
+      const updated = await response.json();
+      task.isDone = updated.isDone;
+      if (!item.isConnected) return;
+      box.checked = updated.isDone;
+      item.classList.toggle('done', updated.isDone);
+      updateRemaining(tasks);
     });
 
     const title = document.createElement('span');

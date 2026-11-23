@@ -41,6 +41,18 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task TogglingATaskTwice_MarksItNotDone()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Toggle twice"))).Content.ReadFromJsonAsync<TaskItem>();
+
+        var firstToggle = await (await _client.PostAsync($"/api/tasks/{created!.Id}/toggle", null)).Content.ReadFromJsonAsync<TaskItem>();
+        var secondToggle = await (await _client.PostAsync($"/api/tasks/{created.Id}/toggle", null)).Content.ReadFromJsonAsync<TaskItem>();
+
+        Assert.True(firstToggle!.IsDone);
+        Assert.False(secondToggle!.IsDone);
+    }
+
+    [Fact]
     public async Task GettingAMissingTask_ReturnsNotFound()
     {
         var response = await _client.GetAsync("/api/tasks/99999");
