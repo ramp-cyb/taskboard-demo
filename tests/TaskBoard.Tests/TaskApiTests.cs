@@ -95,6 +95,48 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Filtering_ByActiveStatus_ReturnsOnlyNotDoneTasks()
+    {
+        var tasks = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks?status=active");
+
+        Assert.NotNull(tasks);
+        Assert.All(tasks, t => Assert.False(t.IsDone));
+    }
+
+    [Fact]
+    public async Task Filtering_ByCompletedStatus_ReturnsOnlyDoneTasks()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Complete me"))).Content.ReadFromJsonAsync<TaskItem>();
+        await _client.PostAsync($"/api/tasks/{created!.Id}/toggle", null);
+
+        var tasks = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks?status=completed");
+
+        Assert.NotNull(tasks);
+        Assert.All(tasks, t => Assert.True(t.IsDone));
+        Assert.Contains(tasks, t => t.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Filtering_ByStatusAndSearch_CombinesBothFilters()
+    {
+        var tasks = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks?status=active&search=prepare");
+
+        Assert.NotNull(tasks);
+        Assert.Single(tasks);
+        Assert.Equal("Prepare the client demo", tasks[0].Title);
+    }
+
+    [Fact]
+    public async Task Filtering_UnknownStatusValue_ReturnsAllTasks()
+    {
+        var tasks = await _client.GetFromJsonAsync<List<TaskItem>>("/api/tasks?status=bogus");
+
+        Assert.NotNull(tasks);
+        Assert.Contains(tasks, t => t.Title == "Prepare the client demo");
+        Assert.Contains(tasks, t => t.Title == "Update the README");
+    }
+
+    [Fact]
     public async Task ExportTask_ReturnsCSVWithHeader()
     {
         var response = await _client.GetAsync("/api/tasks/export");

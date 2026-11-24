@@ -27,6 +27,25 @@ form, #search {
   margin-bottom: 12px;
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  background: white;
+  color: #656d76;
+  border: 1px solid #d0d7de;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #1f6feb;
+  color: white;
+  border-color: #1f6feb;
+}
+
 input, select, button {
   font: inherit;
   padding: 8px;
