@@ -41,6 +41,37 @@ public class TaskApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task UpdatingATask_ChangesTitleAndPriority()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Old title", Priority.Low))).Content.ReadFromJsonAsync<TaskItem>();
+
+        var response = await _client.PutAsJsonAsync($"/api/tasks/{created!.Id}", new UpdateTask("New title", Priority.High));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = await response.Content.ReadFromJsonAsync<TaskItem>();
+        Assert.Equal("New title", updated!.Title);
+        Assert.Equal(Priority.High, updated.Priority);
+    }
+
+    [Fact]
+    public async Task UpdatingATask_WithBlankTitle_ReturnsBadRequest()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/tasks", new NewTask("Keep me"))).Content.ReadFromJsonAsync<TaskItem>();
+
+        var response = await _client.PutAsJsonAsync($"/api/tasks/{created!.Id}", new UpdateTask("   ", Priority.Medium));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdatingAMissingTask_ReturnsNotFound()
+    {
+        var response = await _client.PutAsJsonAsync("/api/tasks/99999", new UpdateTask("Does not matter", Priority.Medium));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GettingAMissingTask_ReturnsNotFound()
     {
         var response = await _client.GetAsync("/api/tasks/99999");

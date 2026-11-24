@@ -24,6 +24,7 @@ dotnet test
 | GET | `/api/tasks?search=` | Lists tasks, optionally filtered by title |
 | GET | `/api/tasks/{id}` | One task |
 | POST | `/api/tasks` | Adds a task: `{ "title": "...", "priority": "Low" \| "Medium" \| "High" }` |
+| PUT | `/api/tasks/{id}` | Updates a task's title and priority; 400 for a blank title, 404 if missing |
 | POST | `/api/tasks/{id}/toggle` | Marks a task done or not done |
 | DELETE | `/api/tasks/{id}` | Deletes a task |
 

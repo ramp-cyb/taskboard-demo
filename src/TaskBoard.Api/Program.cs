@@ -21,6 +21,16 @@ tasks.MapPost("/", (TaskStore store, NewTask request) =>
     return Results.Created($"/api/tasks/{task.Id}", task);
 });
 
+tasks.MapPut("/{id:int}", (TaskStore store, int id, UpdateTask request) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Title))
+    {
+        return Results.BadRequest();
+    }
+
+    return store.Update(id, request) is { } task ? Results.Ok(task) : Results.NotFound();
+});
+
 tasks.MapPost("/{id:int}/toggle", (TaskStore store, int id) =>
     store.Toggle(id) is { } task ? Results.Ok(task) : Results.NotFound());
 

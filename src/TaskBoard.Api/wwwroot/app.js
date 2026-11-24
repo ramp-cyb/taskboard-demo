@@ -26,6 +26,7 @@ function render(tasks) {
     const title = document.createElement('span');
     title.className = 'title';
     title.textContent = task.title;
+    title.addEventListener('dblclick', () => startEditing(title, task));
 
     const priority = document.createElement('span');
     priority.className = 'priority ' + task.priority.toLowerCase();
@@ -43,6 +44,38 @@ function render(tasks) {
     item.append(box, title, priority, remove);
     list.append(item);
   }
+}
+
+function startEditing(title, task) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'title-edit';
+  input.value = task.title;
+
+  const cancel = () => input.replaceWith(title);
+
+  input.addEventListener('keydown', async event => {
+    if (event.key === 'Enter') {
+      const newTitle = input.value.trim();
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle, priority: task.priority })
+      });
+      if (response.ok) {
+        load();
+      } else {
+        cancel();
+      }
+    } else if (event.key === 'Escape') {
+      cancel();
+    }
+  });
+  input.addEventListener('blur', cancel);
+
+  title.replaceWith(input);
+  input.focus();
+  input.select();
 }
 
 document.getElementById('add-form').addEventListener('submit', async event => {

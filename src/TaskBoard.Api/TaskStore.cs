@@ -11,6 +11,8 @@ public sealed record TaskItem(int Id, string Title, Priority Priority, bool IsDo
 
 public sealed record NewTask(string Title, Priority Priority = Priority.Medium);
 
+public sealed record UpdateTask(string Title, Priority Priority);
+
 /// <summary>Keeps tasks in memory; they are lost when the app stops.</summary>
 public sealed class TaskStore
 {
@@ -63,6 +65,17 @@ public sealed class TaskStore
             var index = _tasks.FindIndex(t => t.Id == id);
             if (index < 0) return null;
             _tasks[index] = _tasks[index] with { IsDone = !_tasks[index].IsDone };
+            return _tasks[index];
+        }
+    }
+
+    public TaskItem? Update(int id, UpdateTask request)
+    {
+        lock (_lock)
+        {
+            var index = _tasks.FindIndex(t => t.Id == id);
+            if (index < 0) return null;
+            _tasks[index] = _tasks[index] with { Title = request.Title.Trim(), Priority = request.Priority };
             return _tasks[index];
         }
     }
