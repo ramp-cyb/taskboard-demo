@@ -26,6 +26,12 @@
     <input id="search" type="search" placeholder="Search tasks">
     <a id="export-link" href="/api/tasks/export" download="tasks.csv">Export</a>
 
+    <div id="filter-tabs" class="tabs">
+      <button type="button" class="tab active" data-status="">All</button>
+      <button type="button" class="tab" data-status="active">Active</button>
+      <button type="button" class="tab" data-status="completed">Completed</button>
+    </div>
+
     <ul id="tasks"></ul>
   </main>
   <script src="app.js"></script>

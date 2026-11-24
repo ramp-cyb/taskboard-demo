@@ -1,9 +1,13 @@
 const list = document.getElementById('tasks');
 const remaining = document.getElementById('remaining');
+const tabs = document.querySelectorAll('#filter-tabs .tab');
+let currentStatus = '';
 
 async function load() {
   const search = document.getElementById('search').value;
-  const response = await fetch('/api/tasks?search=' + encodeURIComponent(search));
+  const params = new URLSearchParams({ search });
+  if (currentStatus) params.set('status', currentStatus);
+  const response = await fetch('/api/tasks?' + params.toString());
   const tasks = await response.json();
   render(tasks);
   remaining.textContent = tasks.filter(t => !t.isDone).length + ' remaining';
@@ -58,5 +62,14 @@ document.getElementById('add-form').addEventListener('submit', async event => {
 });
 
 document.getElementById('search').addEventListener('input', load);
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentStatus = tab.dataset.status;
+    load();
+  });
+});
 
 load();
